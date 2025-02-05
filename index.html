@@ -1,1 +1,76 @@
-Hello
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI Secure</title>
+    <script src="https://cdn.jsdelivr.net/npm/powerbi-client@2.20.2/dist/powerbi.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 20px; }
+        #loginForm { display: block; }
+        #reportContainer { display: none; width: 90vw; height: 90vh; border: none; margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>Secure Power BI Embedded Report</h1>
+
+    <div id="loginForm">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div id="reportContainer"></div>
+    <button id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
+
+    <script>
+        async function login() {
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            let response = await fetch("http://localhost:5000/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            let data = await response.json();
+            if (response.ok) {
+                document.getElementById("loginForm").style.display = "none";
+                document.getElementById("reportContainer").style.display = "block";
+                document.getElementById("logoutBtn").style.display = "block";
+                loadPowerBI();
+            } else {
+                alert(data.error);
+            }
+        }
+
+        async function loadPowerBI() {
+            let response = await fetch("http://localhost:5000/");
+            if (!response.ok) {
+                alert("Unauthorized access");
+                return;
+            }
+
+            let config = await response.json();
+            var embedConfig = {
+                type: 'report',
+                id: config.reportId,
+                embedUrl: config.embedUrl,
+                accessToken: config.accessToken,
+                tokenType: window['powerbi-client'].models.TokenType.Embed,
+                settings: { filterPaneEnabled: false, navContentPaneEnabled: true }
+            };
+
+            var reportContainer = document.getElementById('reportContainer');
+            var powerbi = new window['powerbi-client'].service.Service(powerbi);
+            var report = powerbi.embed(reportContainer, embedConfig);
+        }
+
+        async function logout() {
+            await fetch("http://localhost:5000/logout", { method: "POST" });
+            location.reload();
+        }
+    </script>
+</body>
+</html>
