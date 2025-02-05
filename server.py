@@ -2,11 +2,13 @@ from flask import Flask, jsonify, request, session
 from dotenv import load_dotenv
 import os
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True, origins=["https://jaimesoroa.github.io"])
 bcrypt = Bcrypt(app)
 
 # Secret Key for Session Management
